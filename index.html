@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Anagrammenquiz – Multi-level met timer & hints</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #eef2f7;
+    margin: 0; padding: 0;
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+    align-items: center;
+  }
+  .container {
+    background: white;
+    border-radius: 12px;
+    max-width: 600px;
+    width: 90vw;
+    padding: 2rem 2.5rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  }
+  h1, h2 {
+    text-align: center;
+    margin: 0 0 1rem 0;
+  }
+  .question-container {
+    margin-bottom: 1.5rem;
+  }
+  label {
+    font-weight: 600;
+    display: block;
+    margin-bottom: 0.3rem;
+  }
+  input[type=text] {
+    width: 100%;
+    padding: 0.6rem;
+    font-size: 1rem;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+  }
+  input[type=text]:disabled {
+    background-color: #ddd;
+  }
+  .feedback {
+    margin-top: 0.3rem;
+    font-weight: 700;
+  }
+  .correct {
+    color: #2e7d32;
+  }
+  .wrong {
+    color: #c62828;
+  }
+  button {
+    background-color: #1565c0;
+    color: white;
+    border: none;
+    padding: 0.8rem 1.3rem;
+    font-weight: 700;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 1rem;
+    width: 100%;
+    font-size: 1.1rem;
+    transition: background-color 0.3s ease;
+  }
+  button:hover:not(:disabled) {
+    background-color: #0d3d7a;
+  }
+  button:disabled {
+    background-color: #aaa;
+    cursor: not-allowed;
+  }
+  #scorebar-container {
+    margin: 1rem 0;
+    height: 20px;
+    width: 100%;
+    background-color: #ddd;
+    border-radius: 15px;
+    overflow: hidden;
+  }
+  #scorebar {
+    height: 100%;
+    width: 0%;
+    background-color: #2e7d32;
+    transition: width 0.5s ease;
+  }
+  #info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    font-weight: 700;
+  }
+  #lives {
+    color: #c62828;
+  }
+  #timer {
+    color: #1565c0;
+  }
+  #highscore {
+    margin-top: 0.7rem;
+    font-style: italic;
+    text-align: center;
+    color: #444;
+  }
+  #endMessage {
+    text-align: center;
+    padding: 1rem;
+    margin-top: 2rem;
+    border-radius: 8px;
+    background-color: #f0f4c3;
+    font-weight: 700;
+    font-size: 1.2rem;
+  }
+  #hintBtn {
+    background-color: #fbc02d;
+    color: #5d4037;
+    font-weight: 700;
+    margin-top: 0.5rem;
+  }
+  #hintBtn:disabled {
+    background-color: #eee;
+    color: #999;
+    cursor: not-allowed;
+  }
+  #hintText {
+    margin-top: 0.5rem;
+    font-style: italic;
+    color: #444;
+  }
+  @media(max-width:450px) {
+    .container {
+      padding: 1rem 1.2rem;
+    }
+    button {
+      font-size: 1rem;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="container" role="main" aria-label="Anagrammenquiz">
+    <h1>Anagrammenquiz</h1>
+    <h2 id="levelTitle">Level: Makkelijk</h2>
+    <div id="info">
+      <div id="lives">❤️ Levens: 3</div>
+      <div id="timer">⏰ Tijd: 15</div>
+    </div>
+    <div id="quiz"></div>
+    <button id="checkBtn">Controleer antwoorden</button>
+    <button id="hintBtn">💡 Vraag hint (1x per level)</button>
+    <div id="hintText"></div>
+    <div id="scorebar-container"><div id="scorebar"></div></div>
+    <div id="score"></div>
+    <div id="highscore"></div>
+    <div id="endMessage" role="alert"></div>
+  </div>
+
+  <audio id="sound-correct" src="https://cdn.pixabay.com/audio/2022/03/15/audio_51d5d1c0a0.mp3"></audio>
+  <audio id="sound-wrong" src="https://cdn.pixabay.com/audio/2022/03/15/audio_d1295d08ab.mp3"></audio>
+  <audio id="sound-timeup" src="https://cdn.pixabay.com/audio/2023/04/06/audio_79c6f8dba5.mp3"></audio>
+
+  <script>
+    const levels = [
+      {
+        name: "Makkelijk",
+        timePerQuestion: 15,
+        lives: 3,
+        questions: [
+          { anagram: "Stram dame", hint: "Hoofdstad, grachten", answer: "amsterdam" },
+          { anagram: "Beard", hint: "Brabantse stad met 5 letters", answer: "breda" },
+          { anagram: "Alarm hee", hint: "Nabij Zandvoort", answer: "haarlem" }
+        ]
+      },
+      {
+        name: "Gemiddeld",
+        timePerQuestion: 12,
+        lives: 3,
+        questions: [
+          { anagram: "Ring gone nu", hint: "Studentenstad in het noorden", answer: "groningen" },
+          { anagram: "Roams forte", hint: "Stad in midden Nederland", answer: "amersfoort" },
+          { anagram: "Real Me", hint: "Nieuwe stad, vlakbij het water", answer: "almere" },
+          { anagram: "Welzol", hint: "Overijsselse stad met Sassenpoort", answer: "zwolle" }
+        ]
+      },
+      {
+        name: "Moeilijk",
+        timePerQuestion: 10,
+        lives: 2,
+        questions: [
+          { anagram: "Dram rotter", hint: "Tweede stad van Nederland", answer: "rotterdam" },
+          { anagram: "Jemen gin", hint: "Stad met vier heuvels", answer: "nijmegen" },
+          { anagram: "Honest dive", hint: "Lichtstad in het zuiden", answer: "eindhoven" },
+          { anagram: "Ged Henn", hint: "Regeringscentrum", answer: "den haag" },
+          { anagram: "Wendure ale", hint: "Friese hoofdstad", answer: "leeuwarden" }
+        ]
+      }
+    ];
+
+    let currentLevelIndex = 0;
+    let currentLevel = levels[currentLevelIndex];
+    let lives = currentLevel.lives;
+    let timer = currentLevel.timePerQuestion;
+    let timerInterval = null;
+    let gameOver = false;
+    let hintUsed = false;
+
+    const quizDiv = document.getElementById("quiz");
+    const livesDisplay = document.getElementById("lives");
+    const timerDisplay = document.getElementById("timer");
+    const scorebar = document.getElementById("scorebar");
+    const checkBtn = document.getElementById("checkBtn");
+    const hintBtn = document.getElementById("hintBtn");
+    const hintText = document.getElementById("hintText");
+    const scoreDisplay = document.getElementById("score");
+    const highscoreDisplay = document.getElementById("highscore");
+    const endMessage = document.getElementById("endMessage");
+    const levelTitle = document.getElementById("levelTitle");
+
+    const soundCorrect = document.getElementById("sound-correct");
+    const soundWrong = document.getElementById("sound-wrong");
+    const soundTimeUp = document.getElementById("sound-timeup");
+
+    function shuffle(array) {
+      return array.sort(() => Math.random() - 0.5);
+    }
+
+    function saveHighscore(levelName, score) {
+      const key = "highscore_" + levelName.toLowerCase();
+      let prevHigh = parseInt(localStorage.getItem(key) || "0", 10);
+      if (score > prevHigh) {
+        localStorage.setItem(key, score);
+        return score;
+      }
+      return prevHigh;
+    }
+
+    function loadHighscore(levelName) {
+      const key = "highscore_" + levelName.toLowerCase();
+      return parseInt(localStorage.getItem(key) || "0", 10);
+    }
+
+    function initLevel() {
+      currentLevel = levels[currentLevelIndex];
+      lives = currentLevel.lives;
+      timer = currentLevel.timePerQuestion;
+      hintUsed = false;
+      gameOver = false;
+
+      levelTitle.textContent = `Level: ${currentLevel.name}`;
+      lives
