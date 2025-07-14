@@ -1,0 +1,70 @@
+
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Anagram Quiz</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding: 2em; }
+    .hidden { display: none; }
+    .score { font-size: 1.2em; margin: 1em; }
+    .lives { color: red; font-weight: bold; }
+    input { padding: 0.5em; font-size: 1em; }
+    button { padding: 0.5em 1em; font-size: 1em; }
+  </style>
+</head>
+<body>
+  <h1>Anagram Quiz</h1>
+  <div id="quiz"></div>
+  <div class="score">Score: <span id="score">0</span></div>
+  <div class="lives">Levens: <span id="lives">3</span></div>
+  <input type="text" id="answer" placeholder="Typ je antwoord" />
+  <button onclick="checkAnswer()">Controleer</button>
+  <audio id="correctSound" src="correct.mp3" preload="auto"></audio>
+  <audio id="wrongSound" src="wrong.mp3" preload="auto"></audio>
+  <script>
+    const anagrams = [
+      { vraag: "MESTERAD", antwoord: "AMSTERDAM" },
+      { vraag: "TEGNRI", antwoord: "GRONINGEN" },
+      { vraag: "HEROTNHA", antwoord: "HAARLEM" }
+    ];
+    let current = 0;
+    let score = 0;
+    let lives = 3;
+
+    function showQuestion() {
+      document.getElementById("quiz").textContent = "Welk woord is dit anagram: " + anagrams[current].vraag;
+    }
+
+    function checkAnswer() {
+      const input = document.getElementById("answer").value.toUpperCase();
+      const correct = anagrams[current].antwoord;
+      if (input === correct) {
+        document.getElementById("correctSound").play();
+        score++;
+        document.getElementById("score").textContent = score;
+        nextQuestion();
+      } else {
+        document.getElementById("wrongSound").play();
+        lives--;
+        document.getElementById("lives").textContent = lives;
+        if (lives === 0) {
+          document.getElementById("quiz").textContent = "Game Over! Je score is " + score;
+        }
+      }
+      document.getElementById("answer").value = "";
+    }
+
+    function nextQuestion() {
+      current++;
+      if (current >= anagrams.length) {
+        document.getElementById("quiz").textContent = "Klaar! Je eindscore is " + score;
+      } else {
+        showQuestion();
+      }
+    }
+
+    window.onload = showQuestion;
+  </script>
+</body>
+</html>
